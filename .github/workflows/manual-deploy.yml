@@ -45,24 +45,6 @@ jobs:
           mkdir -p deploy-out/${CLEAN_NAME}/dist
           cp -r dist/* deploy-out/${CLEAN_NAME}/dist/
 
-      - name: Update Branch Registry
-        run: |
-          git fetch origin gh-pages || true
-          git checkout origin/gh-pages -- branches.json || echo "[]" > branches.json
-          
-          BRANCH_NAME="${{ steps.prep.outputs.branch_name }}"
-          
-          node -e "
-            const fs = require('fs');
-            let branches = [];
-            try { branches = JSON.parse(fs.readFileSync('branches.json', 'utf8')); } catch(e) {}
-            if (!branches.includes('$BRANCH_NAME')) {
-              branches.push('$BRANCH_NAME');
-              fs.writeFileSync('branches.json', JSON.stringify(branches, null, 2));
-            }
-          "
-          mv branches.json deploy-out/
-
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
