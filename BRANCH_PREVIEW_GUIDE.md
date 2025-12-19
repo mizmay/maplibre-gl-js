@@ -13,56 +13,53 @@ git worktree add ../maplibre-preview preview-infra
 cd ../maplibre-preview && npm install
 ```
 
-### 2. The Development Loop
-Whenever you want to test your current work:
+### 2. The Development Loop (Switch & Sync)
+Since your feature branches stay clean, follow this loop to test your work:
 
-```bash
-# Step A: Build your feature (in your main work directory)
-cd ~/Repos/maplibre/maplibre-gl-js
-npm run build-dev && npm run build-css
+**Step A: Work in `maplibre-gl-js`**
+1. Checkout the branch you want to test: `git checkout my-feature`
+2. Build your changes: `npm run build-dev && npm run build-css`
 
-# Step B: Sync and View (in the preview worktree)
-cd ../maplibre-preview
-npm run preview
-```
-View at: **http://localhost:9966**
+**Step B: Sync in `maplibre-preview`**
+1. Switch to the preview directory: `cd ../maplibre-preview`
+2. Ensure you are on the infra branch: `git checkout preview-infra`
+3. Sync the build and start server: `npm run preview`
+
+**View at: http://localhost:9966**
+
+---
+
+## ⚖️ Comparing Branches (Side-by-Side)
+
+The previewer allows you to compare multiple branches with synchronized cameras.
+
+1. **Build Branch A**: In `maplibre-gl-js`, checkout `main`, build it, then run `npm run preview-sync` in `maplibre-preview`.
+2. **Build Branch B**: In `maplibre-gl-js`, checkout `my-feature`, build it, then run `npm run preview-sync` in `maplibre-preview`.
+3. **Compare**: Open `localhost:9966`, check both branches in the dropdown, and click **Update View**.
 
 ---
 
 ## 🌍 Remote Deployment
 
-Deploy your branch to GitHub Pages for others to review.
-
-1. **Push your code**: `git push fork your-branch-name`
-2. **Deploy**: Go to your fork's **Actions** tab → **Deploy Branch Preview** → **Run workflow** (enter your branch name).
-3. **View**: `https://[your-username].github.io/maplibre-gl-js/?branch=your-branch-name`
+1. **Push code**: `git push fork your-feature-branch`
+2. **Deploy**: Fork GitHub → **Actions** → **Deploy Branch Preview** → **Run workflow** (enter branch name).
+3. **View**: `https://[your-username].github.io/maplibre-gl-js/`
 
 ---
 
-## ⚖️ Comparing Branches
+## 🌳 Git Worktree Troubleshooting
 
-1. Build and Sync **main**:
-   ```bash
-   cd ~/Repos/maplibre/maplibre-gl-js
-   git checkout main && npm run build-dev && npm run build-css
-   cd ../maplibre-preview && npm run preview-sync
-   ```
+Run `git branch` to see branch status symbols:
+- `*` (**Asterisk**): Active in current folder.
+- `+` (**Plus**): Active in a different folder.
 
-2. Build and Sync **your feature**:
-   ```bash
-   cd ~/Repos/maplibre/maplibre-gl-js
-   git checkout your-branch && npm run build-dev && npm run build-css
-   cd ../maplibre-preview && npm run preview-sync
-   ```
-
-3. **Compare**: Run `npm run preview-local` in `maplibre-preview`. Open the browser, select both branches in the dropdown, and click **Update View**.
+**Correct state**:
+- `maplibre-gl-js` folder: `* my-feature`, `+ preview-infra`
+- `maplibre-preview` folder: `+ my-feature`, `* preview-infra`
 
 ---
 
 ## 🛠 Troubleshooting
 
-- **"Address already in use"**: Kill the old process: `lsof -ti:9966 | xargs kill -9`
-- **Missing UI**: Run `npm run preview-sync` to fetch the latest `index.html` and registry.
-- **Clean Feature Branch**: If you see preview files in your feature branch, delete them: `rm -rf scripts/ .github/workflows/deploy-preview.yml` (they should only live in `preview-infra`).
-
-**Note**: All local test files are stored in `staging/previews/` which is already ignored by MapLibre's `.gitignore`.
+- **"Address already in use"**: `lsof -ti:9966 | xargs kill -9`
+- **Clean Feature Branch**: If infrastructure files appear in your feature branch, delete them (they belong in `preview-infra`).
