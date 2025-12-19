@@ -156,6 +156,7 @@
     "spellcheck": "cspell",
     "docs": "npm run generate-docs && docker run --rm -v ${PWD}:/docs squidfunk/mkdocs-material build",
     "start-server": "st --no-cache -H localhost --port 9966 .",
+    "preview-local": "st --no-cache -H localhost --port 9966 local-previews",
     "start-docs": "docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material",
     "start": "run-p watch-css watch-dev start-server",
     "start-bench": "run-p watch-css watch-benchmarks start-server",
