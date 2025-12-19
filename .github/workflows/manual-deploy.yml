@@ -1,0 +1,73 @@
+name: Manual Branch Preview Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'The branch name to build and deploy'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Target Branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: |
+          npm run build-dev
+          [ -f src/css/maplibre-gl.css ] && mkdir -p dist && cp src/css/maplibre-gl.css dist/ || echo "No CSS to copy"
+
+      - name: Prepare Deployment
+        id: prep
+        run: |
+          # Sanitize branch name
+          CLEAN_NAME=$(echo "${{ github.event.inputs.branch_name }}" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
+          echo "branch_name=${CLEAN_NAME}" >> $GITHUB_OUTPUT
+          
+          mkdir -p deploy-out/${CLEAN_NAME}/dist
+          cp -r dist/* deploy-out/${CLEAN_NAME}/dist/
+
+      - name: Update Branch Registry
+        run: |
+          git fetch origin gh-pages || true
+          git checkout origin/gh-pages -- branches.json || echo "[]" > branches.json
+          
+          BRANCH_NAME="${{ steps.prep.outputs.branch_name }}"
+          
+          node -e "
+            const fs = require('fs');
+            let branches = [];
+            try { branches = JSON.parse(fs.readFileSync('branches.json', 'utf8')); } catch(e) {}
+            if (!branches.includes('$BRANCH_NAME')) {
+              branches.push('$BRANCH_NAME');
+              fs.writeFileSync('branches.json', JSON.stringify(branches, null, 2));
+            }
+          "
+          mv branches.json deploy-out/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: deploy-out
+          branch: gh-pages
+          clean: false
+          target-folder: .
+
