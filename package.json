@@ -176,7 +176,11 @@
     "gl-stats": "node --no-warnings --loader ts-node/esm test/bench/gl-stats.ts",
     "prepare": "npm run codegen",
     "typecheck": "tsc --noEmit && tsc --project tsconfig.dist.json",
-    "tsnode": "node --experimental-loader=ts-node/esm --no-warnings"
+    "tsnode": "node --experimental-loader=ts-node/esm --no-warnings",
+    "preview-build": "npm run build-dev && npm run build-css",
+    "preview-deploy": "bash scripts/preview-local.sh",
+    "preview-local": "st --no-cache -H localhost --port 9966 staging/previews",
+    "preview": "npm-run-all preview-build preview-deploy preview-local"
   },
   "files": [
     "build/",
