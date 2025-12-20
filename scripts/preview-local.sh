@@ -39,23 +39,8 @@ echo "Copying assets to $PREVIEW_DIR/$CLEAN_NAME/dist/..."
 mkdir -p "$PREVIEW_DIR/$CLEAN_NAME/dist"
 cp -r "$SOURCE_DIST"/* "$PREVIEW_DIR/$CLEAN_NAME/dist/"
 
-# 4. Fetch index.html if missing
-if [ ! -f "$PREVIEW_DIR/index.html" ]; then
-    echo "Fetching Master Tester from gh-pages..."
-    if git show gh-pages:index.html > "$PREVIEW_DIR/index.html" 2>/dev/null; then
-        echo "✓ Master Tester fetched"
-    else
-        # If git show fails, try to copy it from our own checkout if it exists
-        if [ -f "index.html" ]; then
-            cp index.html "$PREVIEW_DIR/index.html"
-            echo "✓ Master Tester copied from local"
-        else
-            echo "⚠ Warning: Could not find index.html. The previewer UI will be missing."
-        fi
-    fi
-fi
 
-# 5. Update branches.json
+# 4. Update branches.json
 BRANCHES_FILE="$PREVIEW_DIR/branches.json"
 [ ! -f "$BRANCHES_FILE" ] && echo "[]" > "$BRANCHES_FILE"
 

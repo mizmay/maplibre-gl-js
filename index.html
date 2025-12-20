@@ -1,269 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>MapLibre GL JS - Branch Previewer</title>
-    <meta charset='utf-8'>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapLibre Branch Previewer</title>
     <style>
-        body { margin: 0; padding: 0; font-family: system-ui, sans-serif; overflow: hidden; background: #333; height: 100vh; width: 100vw; }
-        html, body { height: 100%; width: 100%; }
-        
-        #iframe-container {
-            display: grid;
-            height: 100%;
-            width: 100%;
-            grid-gap: 4px;
-            background: #222;
-        }
-
-        .iframe-wrapper {
-            position: relative;
-            height: 100%;
-            width: 100%;
-            background: white;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .branch-label {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 10;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        #ui-overlay {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            max-width: 250px;
-            border: 1px solid #ccc;
-        }
-
-        .branch-item {
-            display: block;
-            margin: 8px 0;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        #compare-btn {
-            margin-top: 12px;
-            width: 100%;
-            padding: 8px;
-            background: #1976d2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #compare-btn:hover { background: #1565c0; }
-
-        .hidden { display: none !important; }
-
-        /* Styles for the individual map views (inside iframe or single) */
-        #map { width: 100%; height: 100%; }
-        #zoom-display {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
-            font-size: 18px;
-            font-weight: bold;
-            font-family: monospace;
-        }
+        body { margin: 0; padding: 0; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; background: #333; }
+        #header { background: #222; color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
+        #container { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #444; }
+        iframe { width: 100%; height: 100%; border: none; background: white; }
+        .pane { position: relative; }
+        .label { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; pointer-events: none; z-index: 10; }
+        .controls button { cursor: pointer; padding: 5px 15px; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<div id="ui-overlay">
-    <strong>Compare Branches:</strong>
-    <div id="branch-list" style="margin-top: 10px; max-height: 300px; overflow-y: auto;">
-        Loading branches...
+    <div id="header">
+        <div><strong>MapLibre Side-by-Side Preview</strong></div>
+        <div class="controls">
+            <button id="align">Align</button>
+            <label style="margin: 0 10px; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" id="sync-checkbox"> Synchronize
+            </label>
+            <button id="zoom-in">+</button>
+            <button id="zoom-out">−</button>
+        </div>
     </div>
-    <button id="compare-btn">Update View</button>
-</div>
+    <div id="container">
+        <div class="pane">
+            <div class="label" id="label-left">main</div>
+            <iframe id="iframe-left"></iframe>
+        </div>
+        <div class="pane">
+            <div class="label" id="label-right">feature</div>
+            <iframe id="iframe-right"></iframe>
+        </div>
+    </div>
 
-<div id="iframe-container"></div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
 
-<script>
-    const params = new URLSearchParams(window.location.search);
-    const isIframe = params.get('iframe') === 'true';
-    const selectedBranches = params.get('branches') ? params.get('branches').split(',') : ['main'];
-    
-    // Hide UI if inside an iframe
-    if (isIframe) {
-        document.getElementById('ui-overlay').classList.add('hidden');
-    }
+        async function init() {
+            let branches = ['main'];
+            try {
+                const resp = await fetch('./staging/previews/branches.json');
+                if (resp.ok) branches = await resp.json();
+            } catch (e) {}
 
-    async function init() {
-        if (isIframe) {
-            setupSingleMap();
-        } else {
-            await setupGrid();
-            setupUI();
-        }
-    }
+            const leftBranch = params.get('left') || 'main';
+            const rightBranch = params.get('right') || branches.find(b => b !== 'main') || 'main';
 
-    async function setupGrid() {
-        const container = document.getElementById('iframe-container');
-        container.innerHTML = '';
+            document.getElementById('label-left').innerText = leftBranch;
+            document.getElementById('label-right').innerText = rightBranch;
 
-        const count = selectedBranches.length;
-        const cols = count > 2 ? 2 : count;
-        container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            const iframeLeft = document.getElementById('iframe-left');
+            const iframeRight = document.getElementById('iframe-right');
 
-        selectedBranches.forEach(branch => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'iframe-wrapper';
-            
-            const label = document.createElement('div');
-            label.className = 'branch-label';
-            label.textContent = branch;
+            iframeLeft.src = `viewer.html?branch=${leftBranch}&side=left`;
+            iframeRight.src = `viewer.html?branch=${rightBranch}&side=right`;
 
-            const iframe = document.createElement('iframe');
-            iframe.src = `index.html?iframe=true&branch=${branch}`;
-            
-            wrapper.appendChild(label);
-            wrapper.appendChild(iframe);
-            container.appendChild(wrapper);
-        });
+            const syncCheckbox = document.getElementById('sync-checkbox');
+            let isSyncEnabled = false;
 
-        // Sync logic
-        window.addEventListener('message', (e) => {
-            if (e.data.type === 'mapmove') {
-                document.querySelectorAll('iframe').forEach(iframe => {
-                    if (iframe.contentWindow !== e.source) {
-                        iframe.contentWindow.postMessage({ type: 'mapupdate', ...e.data }, '*');
-                    }
-                });
-            }
-        });
-    }
+            syncCheckbox.onchange = (e) => {
+                isSyncEnabled = e.target.checked;
+                if (isSyncEnabled) {
+                    // Trigger initial alignment when checked
+                    iframeLeft.contentWindow.postMessage({ type: 'getView' }, '*');
+                }
+            };
 
-    function setupSingleMap() {
-        const branch = params.get('branch') || 'main';
-        const basePath = `./${branch}/dist/`;
+            const alignBtn = document.getElementById('align');
+            alignBtn.onclick = () => {
+                iframeLeft.contentWindow.postMessage({ type: 'getView' }, '*');
+            };
 
-        // Create map elements
-        const mapDiv = document.createElement('div');
-        mapDiv.id = 'map';
-        const zoomDiv = document.createElement('div');
-        zoomDiv.id = 'zoom-display';
-        zoomDiv.textContent = '--';
-        document.body.appendChild(mapDiv);
-        document.body.appendChild(zoomDiv);
-
-        // Load assets
-        const link = document.createElement('link');
-        link.rel = 'stylesheet'; link.href = `${basePath}maplibre-gl.css`;
-        document.head.appendChild(link);
-
-        const script = document.createElement('script');
-        script.src = `${basePath}maplibre-gl-dev.js`;
-        script.onload = () => {
-            const map = new maplibregl.Map({
-                container: 'map',
-                style: 'https://demotiles.maplibre.org/style.json',
-                center: [-74.5, 40],
-                zoom: 2
-            });
-
-            map.addControl(new maplibregl.NavigationControl(), 'top-right');
-            
-            map.on('zoom', () => zoomDiv.textContent = map.getZoom().toFixed(2));
-            map.on('load', () => zoomDiv.textContent = map.getZoom().toFixed(2));
-
-            // Synchronization
-            map.on('move', () => {
-                if (map._isSyncing) return;
-                window.parent.postMessage({
-                    type: 'mapmove',
-                    center: map.getCenter(),
-                    zoom: map.getZoom(),
-                    bearing: map.getBearing(),
-                    pitch: map.getPitch()
-                }, '*');
-            });
-
+            // Sync logic
             window.addEventListener('message', (e) => {
-                if (e.data.type === 'mapupdate') {
-                    map._isSyncing = true;
-                    map.jumpTo({
-                        center: e.data.center,
-                        zoom: e.data.zoom,
-                        bearing: e.data.bearing,
-                        pitch: e.data.pitch
-                    });
-                    map._isSyncing = false;
+                const data = e.data;
+                if (data.type === 'mapmove') {
+                    // If it's a direct response to getView, we always update the right pane
+                    if (data.isResponse) {
+                        iframeRight.contentWindow.postMessage({
+                            type: 'mapupdate',
+                            center: data.center,
+                            zoom: data.zoom,
+                            bearing: data.bearing,
+                            pitch: data.pitch
+                        }, '*');
+                        return;
+                    }
+
+                    if (isSyncEnabled) {
+                        const target = data.side === 'left' ? iframeRight : iframeLeft;
+                        target.contentWindow.postMessage({
+                            type: 'mapupdate',
+                            center: data.center,
+                            zoom: data.zoom,
+                            bearing: data.bearing,
+                            pitch: data.pitch
+                        }, '*');
+                    }
                 }
             });
-        };
-        script.onerror = () => {
-            document.body.innerHTML = `<div style="padding:20px; color:white; background:red;">
-                <h3>Error loading branch "${branch}"</h3>
-                <p>Assets not found at ${basePath}</p>
-            </div>`;
-        };
-        document.head.appendChild(script);
-    }
 
-    async function setupUI() {
-        const branchList = document.getElementById('branch-list');
-        let branches = ['main'];
-        
-        try {
-            const resp = await fetch('./branches.json');
-            if (resp.ok) branches = await resp.json();
-        } catch (e) {}
+            // Zoom controls
+            const breakSync = () => {
+                isSyncEnabled = false;
+                syncCheckbox.checked = false;
+            };
 
-        branchList.innerHTML = '';
-        branches.forEach(b => {
-            const label = document.createElement('label');
-            label.className = 'branch-item';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.value = b;
-            cb.checked = selectedBranches.includes(b);
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(' ' + b));
-            branchList.appendChild(label);
-        });
+            document.getElementById('zoom-in').onclick = () => {
+                breakSync();
+                iframeLeft.contentWindow.postMessage({ type: 'zoomIn' }, '*');
+                iframeRight.contentWindow.postMessage({ type: 'zoomIn' }, '*');
+            };
+            document.getElementById('zoom-out').onclick = () => {
+                breakSync();
+                iframeLeft.contentWindow.postMessage({ type: 'zoomOut' }, '*');
+                iframeRight.contentWindow.postMessage({ type: 'zoomOut' }, '*');
+            };
+        }
 
-        document.getElementById('compare-btn').onclick = () => {
-            const checked = Array.from(document.querySelectorAll('#branch-list input:checked')).map(i => i.value);
-            if (checked.length > 0) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('branches', checked.join(','));
-                window.location.href = url.href;
-            }
-        };
-    }
-
-    init();
-</script>
+        init();
+    </script>
 </body>
 </html>

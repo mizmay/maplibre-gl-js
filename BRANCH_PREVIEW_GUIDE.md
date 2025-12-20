@@ -12,18 +12,24 @@ Create a parallel directory (worktree) for the preview infrastructure:
 git worktree add ../maplibre-preview preview-infra
 cd ../maplibre-preview && npm install
 ```
+Defined under `scripts` in `package.json`:
+```bash
+    "preview-local": "st --no-cache -H localhost --port 9966 staging/previews",
+    "preview-sync": "bash scripts/preview-local.sh",
+    "preview": "npm run preview-sync && npm run preview-local"
+```
 
 ### 2. The Development Loop (Switch & Sync)
-Since your feature branches stay clean, follow this loop to test your work:
 
-**Step A: Work in `maplibre-gl-js`**
+**Terminal 1: Working in `maplibre-gl-js` directory**
 1. Checkout the branch you want to test: `git checkout my-feature`
 2. Build your changes: `npm run build-dev && npm run build-css`
 
-**Step B: Sync in `maplibre-preview`**
+**Terminal 2: Sync in `maplibre-preview`**
 1. Switch to the preview directory: `cd ../maplibre-preview`
 2. Ensure you are on the infra branch: `git checkout preview-infra`
-3. Sync the build and start server: `npm run preview`
+3. Sync the build: `npm run preview-sync`
+4. Start server: `npm run preview-local`
 
 **View at: http://localhost:9966**
 

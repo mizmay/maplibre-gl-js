@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Viewer</title>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #zoom-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            z-index: 1;
+            pointer-events: none;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="zoom-overlay">Zoom: --</div>
+    <div id="map"></div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const branch = params.get('branch') || 'main';
+        const side = params.get('side') || 'unknown';
+        // Point to the staging folder
+        const basePath = `./staging/previews/${branch}/dist/`;
+
+        // Load CSS
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `${basePath}maplibre-gl.css`;
+        document.head.appendChild(link);
+
+        // Load JS
+        const script = document.createElement('script');
+        script.src = `${basePath}maplibre-gl-dev.js`;
+        script.onload = () => {
+            const map = new maplibregl.Map({
+                container: 'map',
+                style: 'https://demotiles.maplibre.org/style.json',
+                center: [0, 0],
+                zoom: 2
+            });
+
+            const zoomOverlay = document.getElementById('zoom-overlay');
+            const updateZoom = () => {
+                zoomOverlay.innerText = `Zoom: ${map.getZoom().toFixed(2)}`;
+            };
+
+            map.on('load', updateZoom);
+            map.on('zoom', updateZoom);
+
+            // Synchronization logic
+            let isSyncing = false;
+
+            map.on('move', () => {
+                if (isSyncing) return;
+                window.parent.postMessage({
+                    type: 'mapmove',
+                    side: side,
+                    center: map.getCenter(),
+                    zoom: map.getZoom(),
+                    bearing: map.getBearing(),
+                    pitch: map.getPitch()
+                }, '*');
+            });
+
+            window.addEventListener('message', (e) => {
+                if (e.data.type === 'mapupdate') {
+                    isSyncing = true;
+                    map.jumpTo({
+                        center: e.data.center,
+                        zoom: e.data.zoom,
+                        bearing: e.data.bearing,
+                        pitch: e.data.pitch
+                    });
+                    isSyncing = false;
+                } else if (e.data.type === 'zoomIn') {
+                    map.zoomIn();
+                } else if (e.data.type === 'zoomOut') {
+                    map.zoomOut();
+                } else if (e.data.type === 'getView') {
+                    window.parent.postMessage({
+                        type: 'mapmove',
+                        side: side,
+                        isResponse: true,
+                        center: map.getCenter(),
+                        zoom: map.getZoom(),
+                        bearing: map.getBearing(),
+                        pitch: map.getPitch()
+                    }, '*');
+                }
+            });
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
+
