@@ -17,6 +17,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: github.repository == 'mizmay/maplibre-gl-js'
     steps:
       - name: Checkout preview-infra Branch
         uses: actions/checkout@v4
