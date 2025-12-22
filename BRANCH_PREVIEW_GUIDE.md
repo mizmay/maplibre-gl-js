@@ -92,7 +92,7 @@ Open the preview with URL parameters to specify which branches to compare:
 
 ### Overview
 
-The deployment system uses GitHub Actions to deploy the `preview-infra` branch to `gh-pages`. The `deploy-preview.yml` workflow simply copies the already-synced branches and HTML files to GitHub Pages.
+The deployment system uses GitHub Actions to deploy the `preview-infra` branch to `gh-pages`. The `deploy-preview.yml` workflow is **automatically triggered** whenever you push to the `preview-infra` branch.
 
 **The workflow**:
 1. Checks out the `preview-infra` branch
@@ -100,16 +100,16 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
 3. Copies the entire `staging/` directory (which contains all synced branches)
 4. Deploys everything to the `gh-pages` branch
 
-**Important**: The workflow does NOT build branches. You must build and sync branches locally using `npm run preview-sync` before deploying.
+**Important**: The workflow does NOT build branches. You must build and sync branches locally using `npm run preview-sync` before pushing.
 
-### Workflow: Build → Sync → Deploy
+### Workflow: Build → Sync → Push → View
 
 1. **Build branches locally** (in `maplibre-gl-js`):
    ```bash
    # Build main
    git checkout main
    npm run build-dev && npm run build-css
-
+   
    # Build your feature
    git checkout my-feature
    npm run build-dev && npm run build-css
@@ -119,10 +119,10 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
    ```bash
    cd ../maplibre-preview
    git checkout preview-infra
-
+   
    # Sync main
    npm run preview-sync  # while main is checked out in maplibre-gl-js
-
+   
    # Switch to feature branch in maplibre-gl-js, then:
    npm run preview-sync  # syncs the feature branch
    ```
@@ -134,12 +134,7 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
    git push fork preview-infra
    ```
 
-4. **Deploy to GitHub Pages**:
-   - Go to your fork on GitHub and switch to the preview-
-   - Navigate to **Actions** → **Deploy Branch Preview**
-   - Click **Run workflow**
-   - (Optional) Add a commit message
-   - Click **Run workflow**
+4. **Automatic Deployment**: GitHub Actions will detect the push to `preview-infra` and automatically deploy the updated previews to `gh-pages`. You can track progress in the **Actions** tab.
 
 5. **View**: Visit `https://[your-username].github.io/maplibre-gl-js/`
 

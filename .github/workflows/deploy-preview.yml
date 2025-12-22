@@ -1,6 +1,9 @@
 name: Deploy Branch Preview
 
 on:
+  push:
+    branches:
+      - preview-infra
   workflow_dispatch:
     inputs:
       commit_message:
