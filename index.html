@@ -43,7 +43,7 @@
         async function init() {
             let branches = ['main'];
             try {
-                const resp = await fetch('./staging/previews/branches.json');
+                const resp = await fetch('./previews/branches.json');
                 if (resp.ok) branches = await resp.json();
             } catch (e) {}
 

@@ -4,7 +4,7 @@ set -e
 
 # Configuration
 MAIN_REPO_DIR="../maplibre-gl-js"
-PREVIEW_DIR="staging/previews"
+PREVIEW_DIR="previews"
 
 mkdir -p "$PREVIEW_DIR"
 

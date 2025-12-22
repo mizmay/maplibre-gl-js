@@ -8,11 +8,11 @@ The preview system uses a clean two-file architecture:
 
 - **`index.html`**: Main container with side-by-side layout and controls (Align, Synchronize, Zoom)
 - **`viewer.html`**: Individual map viewer loaded in iframes, one per branch
-- **Asset structure**: Built assets stored in `staging/previews/{branch}/dist/`
+- **Asset structure**: Built assets stored in `previews/{branch}/dist/`
 
 ### How It Works
 
-1. Each branch's build artifacts are synced to `staging/previews/{branch}/dist/`
+1. Each branch's build artifacts are synced to `previews/{branch}/dist/`
 2. `index.html` loads two instances of `viewer.html` in iframes, passing branch names via URL parameters
 3. Each `viewer.html` loads its branch's MapLibre assets and renders a map
 4. The iframes communicate with the parent via `postMessage` for synchronization
@@ -60,8 +60,8 @@ Defined under `scripts` in `package.json`:
 
 The server serves from the project root, with:
 - HTML files at root: `index.html`, `viewer.html`
-- Branch assets in: `staging/previews/{branch}/dist/`
-- Branch registry: `staging/previews/branches.json`
+- Branch assets in: `previews/{branch}/dist/`
+- Branch registry: `previews/branches.json`
 
 ---
 
@@ -97,7 +97,7 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
 **The workflow**:
 1. Checks out the `preview-infra` branch
 2. Copies `index.html` and `viewer.html` to the deployment folder
-3. Copies the entire `staging/` directory (which contains all synced branches)
+3. Copies the entire `previews/` directory (which contains all synced branches)
 4. Deploys everything to the `gh-pages` branch
 
 **Important**: The workflow does NOT build branches. You must build and sync branches locally using `npm run preview-sync` before pushing.
@@ -178,8 +178,8 @@ Run `git branch` to see branch status symbols:
 
 ### Asset Loading Issues
 - **Local**: Ensure `npm run preview-local` is serving from the project root
-- **Remote**: Check that the workflow deployed to `staging/previews/{branch}/dist/`
-- **Paths**: Both `index.html` and `viewer.html` use relative paths starting with `./staging/previews/`
+- **Remote**: Check that the workflow deployed to `previews/{branch}/dist/`
+- **Paths**: Both `index.html` and `viewer.html` use relative paths starting with `./previews/`
 
 ### Sync Not Working
 - **Refresh the page**: The iframes need to be fully loaded before sync works

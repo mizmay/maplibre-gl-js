@@ -28,13 +28,13 @@ jobs:
         run: |
           # Copy everything to deploy directory
           mkdir -p deploy-out
-
+          
           # Copy HTML files
           cp index.html deploy-out/
           cp viewer.html deploy-out/
-
-          # Copy staging directory with all branches
-          cp -r staging deploy-out/
+          
+          # Copy previews directory with all branches
+          cp -r previews deploy-out/
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
