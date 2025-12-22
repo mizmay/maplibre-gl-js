@@ -30,8 +30,8 @@
         const params = new URLSearchParams(window.location.search);
         const branch = params.get('branch') || 'main';
         const side = params.get('side') || 'unknown';
-        // Point to the previews folder
-        const basePath = `./previews/${branch}/dist/`;
+        // Point to the subfolder for the branch
+        const basePath = `./${branch}/dist/`;
 
         // Load CSS
         const link = document.createElement('link');
@@ -44,10 +44,10 @@
         script.src = `${basePath}maplibre-gl-dev.js`;
         script.onload = () => {
             const map = new maplibregl.Map({
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+                center: [13.388, 52.517],
+                zoom: 9.5,
                 container: 'map',
-                style: 'https://demotiles.maplibre.org/style.json',
-                center: [0, 0],
-                zoom: 2
             });
 
             const zoomOverlay = document.getElementById('zoom-overlay');
