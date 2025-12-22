@@ -16,7 +16,7 @@
 </head>
 <body>
     <div id="header">
-        <div><strong>MapLibre Side-by-Side Comparison</strong></div>
+        <div><strong>Maplibre Zoom Rounding Behavior Explorer</strong></div>
         <div class="controls">
             <button id="align">Align</button>
             <label style="margin: 0 10px; font-size: 14px; cursor: pointer;">
@@ -43,7 +43,7 @@
         async function init() {
             let branches = ['main'];
             try {
-                const resp = await fetch('./previews/branches.json');
+                const resp = await fetch('./branches.json');
                 if (resp.ok) branches = await resp.json();
             } catch (e) {}
 

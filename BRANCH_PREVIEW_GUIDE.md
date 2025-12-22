@@ -39,9 +39,8 @@ cd ../maplibre-preview && npm install
 ```
 Defined under `scripts` in `package.json`:
 ```bash
-    "preview-local": "st --no-cache -H localhost --port 9966 staging/previews",
+    "preview-local": "st --no-cache -H localhost --port 9966 previews",
     "preview-sync": "bash scripts/preview-local.sh",
-    "preview": "npm run preview-sync && npm run preview-local"
 ```
 
 ### 2. The Development Loop (Switch & Sync)
@@ -58,10 +57,10 @@ Defined under `scripts` in `package.json`:
 
 **View at: http://localhost:9966**
 
-The server serves from the project root, with:
-- HTML files at root: `index.html`, `viewer.html`
-- Branch assets in: `previews/{branch}/dist/`
-- Branch registry: `previews/branches.json`
+The server serves from the `previews/` directory, with:
+- HTML files: `index.html`, `viewer.html`
+- Branch assets in: `{branch}/dist/`
+- Branch registry: `branches.json`
 
 ---
 
@@ -96,9 +95,8 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
 
 **The workflow**:
 1. Checks out the `preview-infra` branch
-2. Copies `index.html` and `viewer.html` to the deployment folder
-3. Copies the entire `previews/` directory (which contains all synced branches)
-4. Deploys everything to the `gh-pages` branch
+2. Copies all files from the `previews/` directory to the deployment root
+3. Deploys everything to the `gh-pages` branch
 
 **Important**: The workflow does NOT build branches. You must build and sync branches locally using `npm run preview-sync` before pushing.
 
@@ -109,7 +107,7 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
    # Build main
    git checkout main
    npm run build-dev && npm run build-css
-   
+
    # Build your feature
    git checkout my-feature
    npm run build-dev && npm run build-css
@@ -119,19 +117,19 @@ The deployment system uses GitHub Actions to deploy the `preview-infra` branch t
    ```bash
    cd ../maplibre-preview
    git checkout preview-infra
-   
+
    # Sync main
    npm run preview-sync  # while main is checked out in maplibre-gl-js
-   
+
    # Switch to feature branch in maplibre-gl-js, then:
    npm run preview-sync  # syncs the feature branch
    ```
 
 3. **Commit and push** (in `maplibre-preview`):
    ```bash
-   git add staging/
+   git add previews/
    git commit -m "Add preview for my-feature branch"
-   git push fork preview-infra
+   git push origin preview-infra
    ```
 
 4. **Automatic Deployment**: GitHub Actions will detect the push to `preview-infra` and automatically deploy the updated previews to `gh-pages`. You can track progress in the **Actions** tab.
@@ -177,9 +175,9 @@ Run `git branch` to see branch status symbols:
 - **Clean Feature Branch**: If infrastructure files appear in your feature branch, delete them (they belong in `preview-infra`).
 
 ### Asset Loading Issues
-- **Local**: Ensure `npm run preview-local` is serving from the project root
-- **Remote**: Check that the workflow deployed to `previews/{branch}/dist/`
-- **Paths**: Both `index.html` and `viewer.html` use relative paths starting with `./previews/`
+- **Local**: Ensure `npm run preview-local` is serving from the `previews/` directory
+- **Remote**: Check that the workflow deployed everything from `previews/` to the gh-pages root
+- **Paths**: Both `index.html` and `viewer.html` use relative paths starting with `./`
 
 ### Sync Not Working
 - **Refresh the page**: The iframes need to be fully loaded before sync works

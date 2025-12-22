@@ -27,15 +27,9 @@ jobs:
 
       - name: Prepare Deployment
         run: |
-          # Copy everything to deploy directory
+          # Copy everything from previews/ to deploy directory
           mkdir -p deploy-out
-          
-          # Copy HTML files
-          cp index.html deploy-out/
-          cp viewer.html deploy-out/
-          
-          # Copy previews directory with all branches
-          cp -r previews deploy-out/
+          cp -r previews/* deploy-out/
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
