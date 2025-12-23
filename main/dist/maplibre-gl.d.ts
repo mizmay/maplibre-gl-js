@@ -13010,6 +13010,13 @@ export type PopupOptions = {
 	 * @defaultValue undefined
 	 */
 	locationOccludedOpacity?: number | string;
+	/**
+	 * A pixel padding applied to the popup's positioning constraints.
+	 * The popup will be positioned to avoid being placed within this padding area
+	 * from the edges of the map container.
+	 * @defaultValue undefined
+	 */
+	padding?: PaddingOptions;
 };
 /**
  * A popup component.
@@ -13285,6 +13292,16 @@ export declare class Popup extends Evented {
 	 * ```
 	 */
 	setSubpixelPositioning(value: boolean): void;
+	/**
+	 * Sets the popup's padding constraints for positioning.
+	 *
+	 * @param padding - The padding to apply as a {@link PaddingOptions} object.
+	 * @example
+	 * ```ts
+	 * popup.setPadding({ top: 10, right: 20, bottom: 30, left: 40 });
+	 * ```
+	 */
+	setPadding(padding?: PaddingOptions): void;
 	_createCloseButton(): void;
 	_onMouseUp: (event: MapMouseEvent) => void;
 	_onMouseMove: (event: MapMouseEvent) => void;
