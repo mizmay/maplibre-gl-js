@@ -43203,7 +43203,7 @@ var devDependencies = {
 	"@types/minimist": "^1.2.5",
 	"@types/murmurhash-js": "^1.0.6",
 	"@types/nise": "^1.4.5",
-	"@types/node": "^25.0.2",
+	"@types/node": "^25.0.3",
 	"@types/offscreencanvas": "^2019.7.3",
 	"@types/pixelmatch": "^5.2.6",
 	"@types/pngjs": "^6.0.5",
@@ -43212,12 +43212,12 @@ var devDependencies = {
 	"@types/request": "^2.48.13",
 	"@types/shuffle-seed": "^1.1.3",
 	"@types/window-or-global": "^1.0.6",
-	"@typescript-eslint/eslint-plugin": "^8.49.0",
-	"@typescript-eslint/parser": "^8.48.1",
+	"@typescript-eslint/eslint-plugin": "^8.50.0",
+	"@typescript-eslint/parser": "^8.50.0",
 	"@unicode/unicode-17.0.0": "^1.6.16",
-	"@vitest/coverage-v8": "4.0.15",
+	"@vitest/coverage-v8": "4.0.16",
 	"@vitest/eslint-plugin": "^1.5.2",
-	"@vitest/ui": "4.0.15",
+	"@vitest/ui": "4.0.16",
 	address: "^2.0.3",
 	autoprefixer: "^10.4.23",
 	benchmark: "^2.1.4",
@@ -43226,7 +43226,7 @@ var devDependencies = {
 	cssnano: "^7.1.2",
 	d3: "^7.9.0",
 	"d3-queue": "^3.0.7",
-	"devtools-protocol": "^0.0.1558402",
+	"devtools-protocol": "^0.0.1560991",
 	diff: "^8.0.2",
 	"dts-bundle-generator": "^9.5.1",
 	eslint: "^9.39.2",
@@ -43253,11 +43253,11 @@ var devDependencies = {
 	"postcss-cli": "^11.0.1",
 	"postcss-inline-svg": "^6.0.0",
 	"pretty-bytes": "^7.1.0",
-	puppeteer: "^24.33.0",
+	puppeteer: "^24.33.1",
 	react: "^19.2.3",
 	"react-dom": "^19.2.3",
 	regenerate: "^1.4.2",
-	rollup: "^4.53.3",
+	rollup: "^4.53.5",
 	"rollup-plugin-sourcemaps2": "^0.5.4",
 	"rollup-plugin-visualizer": "^6.0.5",
 	rw: "^1.3.3",
@@ -43272,7 +43272,7 @@ var devDependencies = {
 	typedoc: "^0.28.15",
 	"typedoc-plugin-markdown": "^4.9.0",
 	typescript: "^5.9.3",
-	vitest: "4.0.15",
+	vitest: "4.0.16",
 	"vitest-webgl-canvas-mock": "^1.1.0"
 };
 var scripts = {
@@ -64748,10 +64748,10 @@ const defaultOptions$5 = {
  * The `KeyboardHandler` allows the user to zoom, rotate, and pan the map using
  * the following keyboard shortcuts:
  *
- * - `=` / `+`: Round to the nearest integer and then increase the zoom level by 1.
- * - `Shift-=` / `Shift-+`: Round to the nearest integer and then increase the zoom level by 2.
- * - `-`: Round to the nearest integer and then decrease the zoom level by 1.
- * - `Shift--`: Round to the nearest integer and then decrease the zoom level by 2.
+ * - `=` / `+`: Incrementally increases the zoom level to the nearest integer, adds 1 if the increment is <= 0.6.
+ * - `Shift-=` / `Shift-+`: Incrementally increases the zoom level to the nearest integer, adds 2 if the increment is <= 0.6.
+ * - `-`: Incrementally decreases the zoom level to the nearest integer, subtracts 1 if the increment is < 0.6.
+ * - `Shift--`: Incrementally decreases the zoom level to the nearest integer, subtracts 2 if the increment is < 0.6.
  * - Arrow keys: Pan by 100 pixels.
  * - `Shift+⇢`: Increase the rotation by 15 degrees.
  * - `Shift+⇠`: Decrease the rotation by 15 degrees.
@@ -64843,7 +64843,7 @@ class KeyboardHandler {
                     duration: 300,
                     easeId: 'keyboardHandler',
                     easing: easeOut,
-                    zoom: zoomDir ? Math.round(tr.zoom) + zoomDir * (e.shiftKey ? 2 : 1) : tr.zoom,
+                    zoom: zoomDir ? Math.round(tr.zoom - 0.1) + zoomDir * (e.shiftKey ? 2 : 1) : tr.zoom,
                     bearing: tr.bearing + bearingDir * this._bearingStep,
                     pitch: tr.pitch + pitchDir * this._pitchStep,
                     offset: [-xDir * this._panStep, -yDir * this._panStep],
@@ -66376,7 +66376,7 @@ class Camera extends performance$1.Evented {
         }, options), eventData);
     }
     /**
-     * Rounds to the nearest integer and then increases the map's zoom level by 1.
+     * Incrementally increases the map's zoom level to the nearest integer, adds 1 if the increment is <= 0.6.
      *
      * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
      *
@@ -66389,11 +66389,11 @@ class Camera extends performance$1.Evented {
      * ```
      */
     zoomIn(options, eventData) {
-        this.zoomTo(Math.round(this.getZoom()) + 1, options, eventData);
+        this.zoomTo(Math.round(this.getZoom() - 0.1) + 1, options, eventData);
         return this;
     }
     /**
-     * Rounds to the nearest integer and then decreases the map's zoom level by 1.
+     * Incrementally decreases the map's zoom level to the nearest integer, subtracts 1 if the increment is < 0.6.
      *
      * Triggers the following events: `movestart`, `move`, `moveend`, `zoomstart`, `zoom`, and `zoomend`.
      *
@@ -66406,7 +66406,7 @@ class Camera extends performance$1.Evented {
      * ```
      */
     zoomOut(options, eventData) {
-        this.zoomTo(Math.round(this.getZoom()) - 1, options, eventData);
+        this.zoomTo(Math.round(this.getZoom() - 0.1) - 1, options, eventData);
         return this;
     }
     /**
@@ -73310,6 +73310,7 @@ const defaultOptions = {
     maxWidth: '240px',
     subpixelPositioning: false,
     locationOccludedOpacity: undefined,
+    padding: undefined,
 };
 const focusQuerySelector = [
     'a[href]',
@@ -73475,20 +73476,21 @@ class Popup extends performance$1.Evented {
             if (!anchor) {
                 const width = this._container.offsetWidth;
                 const height = this._container.offsetHeight;
+                const padding = normalizePadding(this.options.padding);
                 let anchorComponents;
-                if (pos.y + offset.bottom.y < height) {
+                if (pos.y + offset.bottom.y < height + padding.top) {
                     anchorComponents = ['top'];
                 }
-                else if (pos.y > this._map.transform.height - height) {
+                else if (pos.y > this._map.transform.height - height - padding.bottom) {
                     anchorComponents = ['bottom'];
                 }
                 else {
                     anchorComponents = [];
                 }
-                if (pos.x < width / 2) {
+                if (pos.x < width / 2 + padding.left) {
                     anchorComponents.push('left');
                 }
-                else if (pos.x > this._map.transform.width - width / 2) {
+                else if (pos.x > this._map.transform.width - width / 2 - padding.right) {
                     anchorComponents.push('right');
                 }
                 if (anchorComponents.length === 0) {
@@ -73819,6 +73821,19 @@ class Popup extends performance$1.Evented {
     setSubpixelPositioning(value) {
         this.options.subpixelPositioning = value;
     }
+    /**
+     * Sets the popup's padding constraints for positioning.
+     *
+     * @param padding - The padding to apply as a {@link PaddingOptions} object.
+     * @example
+     * ```ts
+     * popup.setPadding({ top: 10, right: 20, bottom: 30, left: 40 });
+     * ```
+     */
+    setPadding(padding) {
+        this.options.padding = padding;
+        this._update();
+    }
     _createCloseButton() {
         if (this.options.closeButton) {
             this._closeButton = DOM.create('button', 'maplibregl-popup-close-button', this._content);
@@ -73883,6 +73898,18 @@ function normalizeOffset(offset) {
             'right': performance$1.Point.convert(offset['right'] || [0, 0])
         };
     }
+}
+function normalizePadding(padding) {
+    var _a, _b, _c, _d;
+    if (!padding) {
+        return { top: 0, right: 0, bottom: 0, left: 0 };
+    }
+    return {
+        top: (_a = padding.top) !== null && _a !== void 0 ? _a : 0,
+        right: (_b = padding.right) !== null && _b !== void 0 ? _b : 0,
+        bottom: (_c = padding.bottom) !== null && _c !== void 0 ? _c : 0,
+        left: (_d = padding.left) !== null && _d !== void 0 ? _d : 0
+    };
 }
 
 const version = packageJSON.version;

@@ -6,8 +6,8 @@
     <title>Maplibre Zoom Rounding Behavior Explorer</title>
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; background: #333; }
-        #header { background: #222; color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
-        #container { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #444; }
+        #header { background: #0077d3; color: white; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; }
+        #container { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; background: #444; }
         iframe { width: 100%; height: 100%; border: none; background: white; }
         .pane { position: relative; }
         .label { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; pointer-events: none; z-index: 10; }
@@ -16,7 +16,6 @@
 </head>
 <body>
     <div id="header">
-        <div><strong>Maplibre Zoom Rounding Behavior Explorer</strong></div>
         <div class="controls">
             <button id="align">Align</button>
             <label style="margin: 0 10px; font-size: 14px; cursor: pointer;">
@@ -25,6 +24,7 @@
             <button id="zoom-in">+</button>
             <button id="zoom-out">−</button>
         </div>
+        <div><strong>Maplibre Zoom Rounding Behavior Explorer</strong></div>
     </div>
     <div id="container">
         <div class="pane">
@@ -32,7 +32,11 @@
             <iframe id="iframe-left"></iframe>
         </div>
         <div class="pane">
-            <div class="label" id="label-right">feature</div>
+            <div class="label" id="label-center">round-zoom</div>
+            <iframe id="iframe-center"></iframe>
+        </div>
+        <div class="pane">
+            <div class="label" id="label-right">align-zoom</div>
             <iframe id="iframe-right"></iframe>
         </div>
     </div>
@@ -48,15 +52,20 @@
             } catch (e) {}
 
             const leftBranch = params.get('left') || 'main';
-            const rightBranch = params.get('right') || branches.find(b => b !== 'main') || 'main';
+            const centerBranch = params.get('center') || 'round-zoom-button-keyboard';
+            const rightBranch = params.get('right') || 'align-button-keyboard-zoom';
 
             document.getElementById('label-left').innerText = leftBranch;
+            document.getElementById('label-center').innerText = centerBranch;
             document.getElementById('label-right').innerText = rightBranch;
 
             const iframeLeft = document.getElementById('iframe-left');
+            const iframeCenter = document.getElementById('iframe-center');
             const iframeRight = document.getElementById('iframe-right');
+            const iframes = [iframeLeft, iframeCenter, iframeRight];
 
             iframeLeft.src = `viewer.html?branch=${leftBranch}&side=left`;
+            iframeCenter.src = `viewer.html?branch=${centerBranch}&side=center`;
             iframeRight.src = `viewer.html?branch=${rightBranch}&side=right`;
 
             const syncCheckbox = document.getElementById('sync-checkbox');
@@ -79,28 +88,21 @@
             window.addEventListener('message', (e) => {
                 const data = e.data;
                 if (data.type === 'mapmove') {
-                    // If it's a direct response to getView, we always update the right pane
-                    if (data.isResponse) {
-                        iframeRight.contentWindow.postMessage({
-                            type: 'mapupdate',
-                            center: data.center,
-                            zoom: data.zoom,
-                            bearing: data.bearing,
-                            pitch: data.pitch
-                        }, '*');
-                        return;
-                    }
-
-                    if (isSyncEnabled) {
-                        const target = data.side === 'left' ? iframeRight : iframeLeft;
-                        target.contentWindow.postMessage({
-                            type: 'mapupdate',
-                            center: data.center,
-                            zoom: data.zoom,
-                            bearing: data.bearing,
-                            pitch: data.pitch
-                        }, '*');
-                    }
+                    iframes.forEach(target => {
+                        // If it's a response, always update others from the sender
+                        // If it's a move and sync is enabled, update others
+                        if (data.isResponse || (isSyncEnabled && target.contentWindow !== e.source)) {
+                            if (target.contentWindow !== e.source || data.isResponse) {
+                                target.contentWindow.postMessage({
+                                    type: 'mapupdate',
+                                    center: data.center,
+                                    zoom: data.zoom,
+                                    bearing: data.bearing,
+                                    pitch: data.pitch
+                                }, '*');
+                            }
+                        }
+                    });
                 }
             });
 
@@ -112,13 +114,11 @@
 
             document.getElementById('zoom-in').onclick = () => {
                 breakSync();
-                iframeLeft.contentWindow.postMessage({ type: 'zoomIn' }, '*');
-                iframeRight.contentWindow.postMessage({ type: 'zoomIn' }, '*');
+                iframes.forEach(iframe => iframe.contentWindow.postMessage({ type: 'zoomIn' }, '*'));
             };
             document.getElementById('zoom-out').onclick = () => {
                 breakSync();
-                iframeLeft.contentWindow.postMessage({ type: 'zoomOut' }, '*');
-                iframeRight.contentWindow.postMessage({ type: 'zoomOut' }, '*');
+                iframes.forEach(iframe => iframe.contentWindow.postMessage({ type: 'zoomOut' }, '*'));
             };
         }
 
